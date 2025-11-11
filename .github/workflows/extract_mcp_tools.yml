@@ -1,0 +1,38 @@
+name: Sync All MCP Tools to Port
+
+on:
+  workflow_dispatch:  # Allow manual trigger
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
+
+jobs:
+  sync-all-mcp-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install mcp httpx
+          pip install uv  # Install uv which provides uvx
+
+      - name: Sync tools from all MCP servers
+        env:
+          # Port API credentials (required)
+          PORT_CLIENT_ID: ${{ secrets.PORT_CLIENT_ID }}
+          PORT_CLIENT_SECRET: ${{ secrets.PORT_CLIENT_SECRET }}
+          # Add secrets for your MCP servers here (matching YOUR__* placeholders in commands)
+          # Example: If command uses YOUR__GITHUB_TOKEN, add: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/extract_mcp_tools.py
+
+      - name: Report completion
+        if: always()
+        run: |
+          echo "✅ MCP tools sync workflow completed"
